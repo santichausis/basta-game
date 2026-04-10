@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 
-const CATEGORIES = [
+const ALL_CATEGORIES = [
+  // Pedidas
   "Políticos K corruptos",
   "Políticos LLA corruptos",
   "Barrios de CABA",
@@ -10,34 +11,71 @@ const CATEGORIES = [
   "Barrios de GBA",
   "Restaurantes / Bodegones",
   "Boliches",
+  // Geo & mundo
+  "Países de América",
+  "Países de Europa",
+  "Ciudades del mundo",
+  "Capitales del mundo",
+  // Nombres
   "Nombres de mujer",
   "Nombres de varón",
-  "Países de América",
+  "Apodos / Sobrenombres",
+  // Entretenimiento
+  "Series de streaming",
+  "Películas argentinas",
+  "Películas de los 90",
+  "Artistas argentinos",
+  "Bandas de rock nacional",
+  "Canciones de los 90",
+  "Canciones de los 2000",
+  "Videojuegos de la infancia",
+  "Personajes de dibujitos animados",
+  // Comida & bebida
+  "Comidas típicas argentinas",
+  "Restaurantes / Bodegones",
+  "Marcas de cerveza",
+  "Vinos argentinos",
+  "Aperitivos / Tragos",
+  "Marcas de gaseosas",
+  // Deporte
+  "Equipos de fútbol argentinos",
+  "Jugadores de fútbol históricos",
+  "Deportistas argentinos",
+  // Marcas & consumo
+  "Marcas de ropa",
+  "Marcas de autos",
+  "Marcas de zapatillas",
+  "Juguetes de los 90",
+  // Naturaleza
   "Animales",
   "Frutas y verduras",
-  "Marcas de ropa",
-  "Películas argentinas",
-  "Artistas argentinos",
-  "Equipos de fútbol",
-  "Ciudades del mundo",
-  "Comidas típicas argentinas",
-  "Marcas de autos",
-  "Series de Netflix",
-  "Objetos del hogar",
+  // Laburo & vida
   "Profesiones",
-  "Países de Europa",
-  "Canciones de los 90",
-  "Marcas de cerveza",
+  "Objetos del hogar",
+  "Barrios de Buenos Aires",
+  "Lugares para veranear en Argentina",
+  "Programas de TV argentinos",
 ];
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 type Votes = Record<string, { up: number; down: number }>;
 
 export default function Home() {
+  const [deck, setDeck] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
   const [votes, setVotes] = useState<Votes>({});
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
 
   useEffect(() => {
+    setDeck(shuffle(ALL_CATEGORIES));
     const stored = localStorage.getItem("basta-votes");
     if (stored) setVotes(JSON.parse(stored));
   }, []);
@@ -47,7 +85,7 @@ export default function Home() {
     localStorage.setItem("basta-votes", JSON.stringify(updated));
   };
 
-  const current = CATEGORIES[index];
+  const current = deck[index] ?? "";
   const currentVotes = votes[current] ?? { up: 0, down: 0 };
 
   const handleVote = (type: "up" | "down") => {
@@ -62,14 +100,16 @@ export default function Home() {
     setFeedback(type);
     setTimeout(() => {
       setFeedback(null);
-      setIndex((i) => (i + 1) % CATEGORIES.length);
+      setIndex((i) => (i + 1) % deck.length);
     }, 500);
   };
 
   const handleNext = () => {
-    setIndex((i) => (i + 1) % CATEGORIES.length);
+    setIndex((i) => (i + 1) % deck.length);
     setFeedback(null);
   };
+
+  if (!current) return null;
 
   return (
     <main className="min-h-screen bg-white flex flex-col items-center justify-between px-6 py-12 max-w-md mx-auto">
@@ -79,7 +119,7 @@ export default function Home() {
           Basta
         </p>
         <p className="text-xs text-gray-300">
-          {index + 1} / {CATEGORIES.length}
+          {index + 1} / {deck.length}
         </p>
       </div>
 
