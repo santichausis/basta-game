@@ -54,6 +54,44 @@ const ALL_CATEGORIES = [
   "Objetos del hogar",
   "Lugares para veranear en Argentina",
   "Programas de TV argentinos",
+  // Humor argentino
+  "Cosas que te dicen en un asado",
+  "Excusas para no ir al gimnasio",
+  "Apodos de jugadores de fútbol",
+  "Insultos / Puteadas argentinas",
+  "Cosas que dice una abuela argentina",
+  // Pop culture
+  "Villanos de películas",
+  "Series / Películas de Netflix",
+  "Influencers / Youtubers",
+  "Canciones de reggaetón",
+  // Creativas
+  "Cosas que encontrás debajo de la cama",
+  "Equipos de fútbol del interior del país",
+  "Palabras en lunfardo",
+];
+
+const TEAM_COLORS = [
+  {
+    btn: "bg-blue-600",
+    flash: "bg-blue-100 border-blue-300",
+    label: "text-blue-600",
+  },
+  {
+    btn: "bg-rose-500",
+    flash: "bg-rose-100 border-rose-300",
+    label: "text-rose-500",
+  },
+  {
+    btn: "bg-emerald-500",
+    flash: "bg-emerald-100 border-emerald-300",
+    label: "text-emerald-500",
+  },
+  {
+    btn: "bg-amber-500",
+    flash: "bg-amber-100 border-amber-300",
+    label: "text-amber-500",
+  },
 ];
 
 function shuffle<T>(arr: T[]): T[] {
@@ -66,17 +104,21 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 type Phase = "setup" | "game" | "end";
-type ScoreFlash = "team1" | "team2" | null;
+
+interface Team {
+  name: string;
+  score: number;
+}
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("setup");
-  const [team1Name, setTeam1Name] = useState("");
-  const [team2Name, setTeam2Name] = useState("");
+  const [teams, setTeams] = useState<Team[]>([
+    { name: "", score: 0 },
+    { name: "", score: 0 },
+  ]);
   const [deck, setDeck] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
-  const [score1, setScore1] = useState(0);
-  const [score2, setScore2] = useState(0);
-  const [flash, setFlash] = useState<ScoreFlash>(null);
+  const [flashIndex, setFlashIndex] = useState<number | null>(null);
   const confettiInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -85,20 +127,36 @@ export default function Home() {
     };
   }, []);
 
+  const updateTeamName = (i: number, name: string) => {
+    setTeams((prev) => prev.map((t, idx) => (idx === i ? { ...t, name } : t)));
+  };
+
+  const addTeam = () => {
+    if (teams.length >= 4) return;
+    setTeams((prev) => [...prev, { name: "", score: 0 }]);
+  };
+
+  const removeTeam = (i: number) => {
+    if (teams.length <= 2) return;
+    setTeams((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const canStart = teams.every((t) => t.name.trim().length > 0);
+
   const startGame = () => {
-    if (!team1Name.trim() || !team2Name.trim()) return;
+    if (!canStart) return;
     setDeck(shuffle(ALL_CATEGORIES));
     setIndex(0);
-    setScore1(0);
-    setScore2(0);
+    setTeams((prev) => prev.map((t) => ({ ...t, score: 0 })));
     setPhase("game");
   };
 
-  const addPoint = (team: 1 | 2) => {
-    if (team === 1) setScore1((s) => s + 1);
-    else setScore2((s) => s + 1);
-    setFlash(team === 1 ? "team1" : "team2");
-    setTimeout(() => setFlash(null), 600);
+  const addPoint = (teamIndex: number) => {
+    setTeams((prev) =>
+      prev.map((t, i) => (i === teamIndex ? { ...t, score: t.score + 1 } : t))
+    );
+    setFlashIndex(teamIndex);
+    setTimeout(() => setFlashIndex(null), 600);
     goNext();
   };
 
@@ -139,10 +197,7 @@ export default function Home() {
 
   const resetGame = () => {
     setPhase("setup");
-    setTeam1Name("");
-    setTeam2Name("");
-    setScore1(0);
-    setScore2(0);
+    setTeams((prev) => prev.map((t) => ({ ...t, score: 0 })));
     setIndex(0);
     if (confettiInterval.current) clearInterval(confettiInterval.current);
   };
@@ -154,44 +209,53 @@ export default function Home() {
         <p className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">
           Basta
         </p>
-        <h1 className="text-3xl font-bold text-gray-900 mb-10 tracking-tight">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 tracking-tight">
           ¿Quiénes juegan?
         </h1>
 
-        <div className="w-full flex flex-col gap-4 mb-10">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Equipo 1
-            </label>
-            <input
-              type="text"
-              value={team1Name}
-              onChange={(e) => setTeam1Name(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && startGame()}
-              placeholder="Nombre del equipo..."
-              maxLength={24}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-lg font-semibold text-gray-900 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Equipo 2
-            </label>
-            <input
-              type="text"
-              value={team2Name}
-              onChange={(e) => setTeam2Name(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && startGame()}
-              placeholder="Nombre del equipo..."
-              maxLength={24}
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-lg font-semibold text-gray-900 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
-            />
-          </div>
+        <div className="w-full flex flex-col gap-3 mb-6">
+          {teams.map((team, i) => (
+            <div key={i} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label
+                  className={`text-xs font-semibold uppercase tracking-wider ${TEAM_COLORS[i].label}`}
+                >
+                  Equipo {i + 1}
+                </label>
+                {i >= 2 && (
+                  <button
+                    onClick={() => removeTeam(i)}
+                    className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={team.name}
+                onChange={(e) => updateTeamName(i, e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && startGame()}
+                placeholder="Nombre del equipo..."
+                maxLength={24}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-lg font-semibold text-gray-900 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors"
+              />
+            </div>
+          ))}
         </div>
+
+        {teams.length < 4 && (
+          <button
+            onClick={addTeam}
+            className="w-full py-3 rounded-2xl border border-dashed border-gray-300 text-gray-400 text-sm font-semibold tracking-wide hover:border-gray-400 hover:text-gray-500 transition-colors mb-6"
+          >
+            + Agregar equipo
+          </button>
+        )}
 
         <button
           onClick={startGame}
-          disabled={!team1Name.trim() || !team2Name.trim()}
+          disabled={!canStart}
           className="w-full py-4 rounded-2xl bg-gray-900 text-white text-lg font-semibold tracking-wide active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
         >
           Empezar
@@ -202,10 +266,10 @@ export default function Home() {
 
   // ── End screen ──────────────────────────────────────────────────────────────
   if (phase === "end") {
-    const tie = score1 === score2;
-    const winner = score1 > score2 ? team1Name : team2Name;
-    const winnerScore = score1 > score2 ? score1 : score2;
-    const loserScore = score1 > score2 ? score2 : score1;
+    const sorted = [...teams].sort((a, b) => b.score - a.score);
+    const topScore = sorted[0].score;
+    const winners = sorted.filter((t) => t.score === topScore);
+    const tie = winners.length > 1;
 
     return (
       <main className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12 max-w-md mx-auto text-center">
@@ -216,32 +280,57 @@ export default function Home() {
         {tie ? (
           <>
             <p className="text-6xl mb-4">🤝</p>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">
+            <h1 className="text-4xl font-bold text-gray-900 mb-1 tracking-tight">
               ¡Empate!
             </h1>
-            <p className="text-xl text-gray-500 mb-8">
-              {score1} – {score2}
+            <p className="text-lg text-gray-500 mb-2">
+              {winners.map((w) => w.name).join(" y ")}
             </p>
+            <p className="text-xl text-gray-400 mb-8">{topScore} puntos</p>
           </>
         ) : (
           <>
             <p className="text-6xl mb-4">🏆</p>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">
-              {winner}
+            <h1 className="text-4xl font-bold text-gray-900 mb-1 tracking-tight">
+              {sorted[0].name}
             </h1>
-            <p className="text-xl text-gray-500 mb-8">
-              {winnerScore} – {loserScore}
-            </p>
+            <p className="text-xl text-gray-400 mb-8">{topScore} puntos</p>
           </>
         )}
+
+        {/* Ranking */}
+        <div className="w-full flex flex-col gap-2 mb-8">
+          {sorted.map((team, i) => {
+            const originalIndex = teams.findIndex((t) => t.name === team.name);
+            return (
+              <div
+                key={i}
+                className="flex items-center justify-between px-5 py-3 rounded-2xl bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400 font-semibold w-4">
+                    {i + 1}
+                  </span>
+                  <span
+                    className={`text-base font-semibold ${TEAM_COLORS[originalIndex].label}`}
+                  >
+                    {team.name}
+                  </span>
+                </div>
+                <span className="text-lg font-bold text-gray-900">
+                  {team.score}
+                </span>
+              </div>
+            );
+          })}
+        </div>
 
         <div className="w-full flex flex-col gap-3">
           <button
             onClick={() => {
               setDeck(shuffle(ALL_CATEGORIES));
               setIndex(0);
-              setScore1(0);
-              setScore2(0);
+              setTeams((prev) => prev.map((t) => ({ ...t, score: 0 })));
               setPhase("game");
             }}
             className="w-full py-4 rounded-2xl bg-gray-900 text-white text-lg font-semibold tracking-wide active:scale-95 transition-transform"
@@ -265,42 +354,30 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white flex flex-col items-center justify-between px-6 py-10 max-w-md mx-auto">
       {/* Header: scores */}
-      <div className="w-full flex items-center justify-between gap-4">
-        <div
-          className={`flex-1 rounded-2xl px-4 py-3 text-center transition-all duration-300 ${
-            flash === "team1"
-              ? "bg-blue-100 border-2 border-blue-300"
-              : "bg-gray-50 border-2 border-transparent"
-          }`}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 truncate">
-            {team1Name}
-          </p>
-          <p className="text-4xl font-bold text-gray-900 mt-0.5">{score1}</p>
-        </div>
-
-        <div className="flex flex-col items-center">
-          <p className="text-xs uppercase tracking-widest text-gray-300 font-medium">
-            Basta
-          </p>
-          <p className="text-xs text-gray-300 mt-0.5">
-            {index + 1}/{deck.length}
-          </p>
-        </div>
-
-        <div
-          className={`flex-1 rounded-2xl px-4 py-3 text-center transition-all duration-300 ${
-            flash === "team2"
-              ? "bg-rose-100 border-2 border-rose-300"
-              : "bg-gray-50 border-2 border-transparent"
-          }`}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 truncate">
-            {team2Name}
-          </p>
-          <p className="text-4xl font-bold text-gray-900 mt-0.5">{score2}</p>
-        </div>
+      <div className="w-full grid gap-2" style={{ gridTemplateColumns: `repeat(${teams.length}, 1fr)` }}>
+        {teams.map((team, i) => (
+          <div
+            key={i}
+            className={`rounded-2xl px-3 py-3 text-center transition-all duration-300 border-2 ${
+              flashIndex === i
+                ? TEAM_COLORS[i].flash
+                : "bg-gray-50 border-transparent"
+            }`}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 truncate">
+              {team.name}
+            </p>
+            <p className="text-4xl font-bold text-gray-900 mt-0.5">
+              {team.score}
+            </p>
+          </div>
+        ))}
       </div>
+
+      {/* Progress */}
+      <p className="text-xs text-gray-300 mt-2">
+        {index + 1} / {deck.length}
+      </p>
 
       {/* Category Card */}
       <div className="flex-1 flex flex-col items-center justify-center w-full">
@@ -313,20 +390,17 @@ export default function Home() {
 
       {/* Controls */}
       <div className="w-full flex flex-col gap-3">
-        {/* Team score buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => addPoint(1)}
-            className="flex-1 py-4 rounded-2xl bg-blue-600 text-white text-base font-semibold tracking-wide active:scale-95 transition-transform"
-          >
-            +1 {team1Name}
-          </button>
-          <button
-            onClick={() => addPoint(2)}
-            className="flex-1 py-4 rounded-2xl bg-rose-500 text-white text-base font-semibold tracking-wide active:scale-95 transition-transform"
-          >
-            +1 {team2Name}
-          </button>
+        {/* Team score buttons — 2 per row */}
+        <div className="grid grid-cols-2 gap-3">
+          {teams.map((team, i) => (
+            <button
+              key={i}
+              onClick={() => addPoint(i)}
+              className={`py-4 rounded-2xl text-white text-sm font-semibold tracking-wide active:scale-95 transition-transform ${TEAM_COLORS[i].btn}`}
+            >
+              +1 {team.name}
+            </button>
+          ))}
         </div>
 
         {/* Skip */}
