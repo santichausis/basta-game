@@ -4,3 +4,33 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Score pop animation */
+@keyframes score-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.5); }
+  65%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+.animate-score-pop {
+  animation: score-pop 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Category card slide-in */
+@keyframes card-slide-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-card-in {
+  animation: card-slide-in 0.28s ease-out both;
+}
+
+/* Winner trophy bounce */
+@keyframes trophy-bounce {
+  0%, 100% { transform: translateY(0); }
+  40%       { transform: translateY(-12px); }
+  60%       { transform: translateY(-6px); }
+}
+.animate-trophy {
+  animation: trophy-bounce 0.7s ease-out 0.2s both;
+}
